@@ -183,6 +183,9 @@ struct cardResult loadCard(int callCount, int *calls, FILE *file)
 	
 	int sumOfUnmarked = sumUnmarked(cardNumbers, markedNumbers);
 	
+	free(cardNumbers);
+	free(markedNumbers);
+	
 	struct cardResult result = { lastDrawn, numbersDrawn, sumOfUnmarked };
 	return result;
 }
