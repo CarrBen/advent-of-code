@@ -16,6 +16,6 @@ p2.o: p2.c
 	$(CC) $(CFLAGS) -c p2.c
 
 clean:
-	rm *.o
-	rm p1
-	rm p2
+	rm -f *.o
+	rm -f p1
+	rm -f p2
