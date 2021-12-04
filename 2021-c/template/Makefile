@@ -1,9 +1,21 @@
-CFLAGS=-Wall -g
+CFLAGS += -Wall -g
+LIBS += -lm
 
-all: mkday copy
+all: p1 p2
 
-copy:
-	cp mkday ../
+p1: p1.o
+	$(CC) $(CFLAGS) p1.o -o p1 $(LIBS)
+
+p2: p2.o
+	$(CC) $(CFLAGS) p2.o -o p2 $(LIBS)
+
+p1.o: p1.c
+	$(CC) $(CFLAGS) -c p1.c
+
+p2.o: p2.c
+	$(CC) $(CFLAGS) -c p2.c
 
 clean:
-	rm mkday
+	rm *.o
+	rm p1
+	rm p2
