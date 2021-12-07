@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 	file = fopen(filename, "r");
 	int crabCount = 0;
 	int positionCounts[POSITION_COUNT];
-	memset(&positionCounts, 0, POSITION_COUNT * sizeof(int));
+	memset(&positionCounts, 0, sizeof(positionCounts));
 	fgets(buffer, maxLineLength, file);
 	
 	char *token = strtok(buffer, ",");
@@ -35,10 +35,10 @@ int main(int argc, char* argv[])
 	printf("Found %d crabs in %s.\n", crabCount, filename);
 
 	int moveLeftCost[POSITION_COUNT];
-	memset(&moveLeftCost, 0, POSITION_COUNT * sizeof(int));
+	memset(&moveLeftCost, 0, sizeof(moveLeftCost));
 	
 	int moveRightCost[POSITION_COUNT];
-	memset(&moveRightCost, 0, POSITION_COUNT * sizeof(int));
+	memset(&moveRightCost, 0, sizeof(moveRightCost));
 	
 	int movingCrabs = 0;
 	for (int i=1; i<POSITION_COUNT; i++) {
@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
 	}
 	
 	printf("Min fuel cost %d\n", minFuel);
+	fclose(file);
 
 	return 0;
 }
