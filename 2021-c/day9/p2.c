@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#define WIDTH (100)
-#define HEIGHT (100)
+#define WIDTH (10)
+#define HEIGHT (5)
 
 struct pos {
 	int x;
@@ -38,7 +38,7 @@ void push(int x, int y, int* stackPointer, struct pos *stack) {
 int countBasin(int x, int y, char counted[]) {
 	int squares = 0;
 	
-	struct pos* stack = malloc(1000 * sizeof(stack));
+	struct pos* stack = malloc(32768 * sizeof(stack));
 	int stackPointer = 0;
 	
 	stack[stackPointer].x = x;
@@ -67,6 +67,8 @@ int countBasin(int x, int y, char counted[]) {
 			}
 		}
 	}
+	
+	free(stack);
 	
 	return squares;
 }
