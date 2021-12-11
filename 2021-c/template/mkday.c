@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 
 	struct stat st = {0};
 
-	char dirName[5];
+	char dirName[6];
 	sprintf(dirName, "day%d", dayNumber);
 
 	if (stat(dirName, &st) == -1) {
