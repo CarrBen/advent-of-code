@@ -28,17 +28,35 @@ struct path {
 	struct cave** caves;
 	int caveCount;
 	bool cannotComplete;
+	struct cave* doubleVisitSmallCave;
 };
 
 void freePath(struct path path) {
 	free(path.caves);
 }
 
+char* pathString(struct path *p) {
+	char *sentence = malloc(1024 * sizeof(char));
+	memset(sentence, 0, 1024 * sizeof(char));
+	char *word = malloc(16 * sizeof(char));
+	memset(sentence, 0, 16 * sizeof(char));
+	
+	for(int i=0; i<p->caveCount; i++) {
+		struct cave *c = p->caves[i];
+		sprintf(word, "%s,", c->name);
+		strcat(sentence, word);
+	}
+	
+	free(word);
+	
+	return sentence;
+}
+
 void printPath(struct path* path) {
 	printf("Path:\n");
-	for(int i=0; i<path->caveCount; i++) {
-		printf("%s,", path->caves[i]->name);
-	}
+	char *str = pathString(path);
+	printf("%s", str);
+	free(str);
 	printf("\n");
 }
 
@@ -90,6 +108,21 @@ void addConnection(struct cave* caves, int *caveCount, char firstName[6], char s
 	//printCave(secondCave);
 }
 
+int pathCompare(const void* a, const void* b) {
+	struct path *pa = (struct path*)a;
+	struct path *pb = (struct path*)b;
+	
+	char *sa = pathString(pa);
+	char *sb = pathString(pb);
+	
+	int result = strcmp(sa, sb);
+	
+	free(sa);
+	free(sb);
+	
+	return result;
+}
+
 int main(int argc, char* argv[])
 {
 	FILE* file;
@@ -125,7 +158,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	struct path *paths = malloc(65536 * sizeof(struct path));
+	struct path *paths = malloc(65536 * 4 * sizeof(struct path));
 	int pathCount = 0;
 	int incompletePathCount = 1;
 	
@@ -135,6 +168,7 @@ int main(int argc, char* argv[])
 	p->caves[p->caveCount] = startCave;
 	p->caveCount++;
 	p->cannotComplete = false;
+	p->doubleVisitSmallCave = NULL;
 	pathCount++;
 	
 	while(incompletePathCount > 0) {
@@ -155,10 +189,20 @@ int main(int argc, char* argv[])
 				struct cave* candidateCave = lastCave->connections[connIndex];
 				if(candidateCave->small) {
 					bool duplicate = false;
+					bool doubleVisitedAlready = false;
 					for(int pathCaveIndex=0; pathCaveIndex<p->caveCount; pathCaveIndex++) {
 						if(candidateCave == p->caves[pathCaveIndex]) {
-							duplicate = true;
-							break;
+							if(candidateCave == p->doubleVisitSmallCave) {
+								if(doubleVisitedAlready) {
+									duplicate = true;
+									break;
+								} else {
+									doubleVisitedAlready = true;
+								}
+							} else {
+								duplicate = true;
+								break;
+							}
 						}
 					}
 					
@@ -172,48 +216,102 @@ int main(int argc, char* argv[])
 			
 			if(nextCaveCount == 0) {
 				printf("Path %d has no next caves\n", pathIndex);
-				printPath(p);
+				//printPath(p);
 				p->cannotComplete = true;
 				incompletePathCount--;
 				continue;
 			}
 			
 			for(int nextCaveIndex=1; nextCaveIndex<nextCaveCount; nextCaveIndex++) {
+				struct cave *nc = nextCaves[nextCaveIndex];
+				printf("nc is %s\n", nc->name);
+				if(p->doubleVisitSmallCave == NULL && nc->small && nc != endCave) {
+					printf("Double visiting cave %s for path %d from %s\n", nc->name, pathIndex, lastCave->name);
+					struct path *np = &paths[pathCount];
+					np->caves = malloc(32 * sizeof(struct cave*));
+					memcpy(np->caves, p->caves, p->caveCount * sizeof(struct cave*));
+					np->caveCount = p->caveCount;
+					np->caves[np->caveCount] = nc;
+					np->cannotComplete = false;
+					np->doubleVisitSmallCave = nc;
+					np->caveCount++;
+					pathCount++;
+					if(nc != endCave) {
+						incompletePathCount++;
+					} else {
+						//printf("Completed path\n");
+						//printPath(np);
+					}
+				}
 				struct path *np = &paths[pathCount];
 				np->caves = malloc(32 * sizeof(struct cave*));
 				memcpy(np->caves, p->caves, p->caveCount * sizeof(struct cave*));
 				np->caveCount = p->caveCount;
-				np->caves[np->caveCount] = nextCaves[nextCaveIndex];
-				p->cannotComplete = false;
+				np->caves[np->caveCount] = nc;
+				np->cannotComplete = false;
+				np->doubleVisitSmallCave = p->doubleVisitSmallCave;
 				np->caveCount++;
 				pathCount++;
-				if(nextCaves[nextCaveIndex] != endCave) {
+				if(nc != endCave) {
 					incompletePathCount++;
 				} else {
-					printf("Completed path\n");
-					printPath(np);
+					//printf("Completed path\n");
+					//printPath(np);
 				}
 			}
 			
+			if(p->doubleVisitSmallCave == NULL && nextCaves[0]->small && nextCaves[0] != endCave) {
+				printf("Double visiting cave %s for path %d from %s\n", nextCaves[0]->name, pathIndex, lastCave->name);
+				struct path *np = &paths[pathCount];
+				np->caves = malloc(32 * sizeof(struct cave*));
+				memcpy(np->caves, p->caves, p->caveCount * sizeof(struct cave*));
+				np->caveCount = p->caveCount;
+				np->caves[np->caveCount] = nextCaves[0];
+				np->cannotComplete = false;
+				np->doubleVisitSmallCave = nextCaves[0];
+				np->caveCount++;
+				pathCount++;
+				if(nextCaves[0] != endCave) {
+					incompletePathCount++;
+				} else {
+					//printf("Completed path\n");
+					//printPath(np);
+				}
+				
+			}
 			p->caves[p->caveCount] = nextCaves[0];
 			p->caveCount++;
 			if(nextCaves[0] == endCave) {
 				incompletePathCount--;
-				printf("Completed path\n");
-				printPath(p);
+				//printf("Completed path\n");
+				//printPath(p);
 			}
 		}
 	}
 	
+	qsort(paths, pathCount, sizeof(struct path), pathCompare);
+	
+	printf("\nPaths\n");
 	fclose(file);
 	int outputPathCount = 0;
+	char* lastPathStr = NULL;
 	for(int i=0; i<pathCount; i++) {
-		printPath(&paths[i]);
 		if(!paths[i].cannotComplete) {
+			char *pathStr = pathString(&paths[i]);
+			if(lastPathStr != NULL) {
+				printf("%s == %s ? %d\n", lastPathStr, pathStr, strcmp(lastPathStr, pathStr));
+			}
+			if(lastPathStr != NULL && strcmp(lastPathStr, pathStr) == 0) {
+				continue;
+			}
+			printPath(&paths[i]);
+			free(lastPathStr);
+			lastPathStr = pathStr;
 			outputPathCount++;
 		}
 		freePath(paths[i]);
 	}
+	free(lastPathStr);
 	printf("There were %d good paths\n", outputPathCount);
 	free(paths);
 	for(int i=0; i<caveCount; i++) {
