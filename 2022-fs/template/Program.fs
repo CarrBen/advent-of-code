@@ -30,9 +30,7 @@ let rec replaceInFiles (path, find: string, replace: string) =
     
     for file in srcDir.GetFiles() do
         let contents = IO.File.ReadAllLines(IO.Path.Combine(file.DirectoryName, file.Name))
-        printfn "Before %A %A" file contents
         let newContents = contents |> Array.map (fun line -> line.Replace(find, replace))
-        printfn "After %A %A" file newContents
         IO.File.WriteAllLines(IO.Path.Combine(file.DirectoryName, file.Name), newContents)
         
     for subdir in srcDir.GetDirectories() do
