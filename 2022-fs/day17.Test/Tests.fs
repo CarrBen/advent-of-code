@@ -22,7 +22,7 @@ type TestClass () =
             0b00000000uy;
             0b00000000uy;
         |]
-        Assert.AreEqual(3, day17.rockStart(grid))
+        Assert.AreEqual(3, day17.rockStart(grid, 0))
         
     [<TestMethod>]
     member this.RockStartFlat () =
@@ -32,7 +32,7 @@ type TestClass () =
             0b00000000uy;
             0b00000000uy;
         |]
-        Assert.AreEqual(4, day17.rockStart(grid))
+        Assert.AreEqual(4, day17.rockStart(grid, 0))
         
     [<TestMethod>]
     member this.RockStartCross () =
@@ -42,7 +42,7 @@ type TestClass () =
             0b00001000uy;
             0b00000000uy;
         |]
-        Assert.AreEqual(6, day17.rockStart(grid))
+        Assert.AreEqual(6, day17.rockStart(grid, 0))
         
     [<TestMethod>]
     member this.UpdateEmptyGrid () =
