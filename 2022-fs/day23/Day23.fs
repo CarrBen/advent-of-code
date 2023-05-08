@@ -7,6 +7,7 @@ type Proposal = int * int * int
 type Direction = North | South | West | East
 type Elves = Elf[]
 type Proposals = Proposal[]
+type ElvesIndex = Map<int, Map<int, Elf * int>>
 
 let Directions = [Direction.North; Direction.South; Direction.West; Direction.East]
 
@@ -36,10 +37,6 @@ let dirIsEmpty(elf: Elf, elves: Elves, dir: Direction): bool =
         | West -> posIsEmptyDxDy(elf, elves, -1, -1) && posIsEmptyDxDy(elf, elves, -1, 0) && posIsEmptyDxDy(elf, elves, -1, 1)
         | East -> posIsEmptyDxDy(elf, elves, 1, -1) && posIsEmptyDxDy(elf, elves, 1, 0) && posIsEmptyDxDy(elf, elves, 1, 1)
     
-let elfHasNeighbours(elf: Elf, elves: Elves): bool =
-    let populatedDirs = Directions |> Seq.map (fun dir -> dirIsEmpty(elf, elves, dir)) |> Seq.filter (fun d -> not(d)) |> Seq.toArray
-    populatedDirs.Length > 0
-    
 let generateProposal(elf: Elf, elfIndex: int, elves: Elves, dir: Direction): Proposal option =
     let ex, ey = elf
     let elvesCache = elves
@@ -50,17 +47,36 @@ let generateProposal(elf: Elf, elfIndex: int, elves: Elves, dir: Direction): Pro
         | West -> Some(Proposal(ex - 1, ey, elfIndex))
         | East -> Some(Proposal(ex + 1, ey, elfIndex))
         
-let generateElfProposals(elf: Elf, elves: Elves, dirs: Direction list): Proposal option list =
+let indexGet(x: int, y: int, index: ElvesIndex): (Elf * int) option =
+    let xResult = index.TryFind(x)
+    if xResult.IsNone then None else
+    let yResult = xResult.Value.TryFind(y)
+    yResult
+    
+let generateElfProposals(elf: Elf, elfIndex: int, elvesIndex: ElvesIndex, dirs: Direction list): Proposal option list =
     let ex, ey = elf
-    let elvesCache = elves |> Array.filter (fun (ax, ay) -> ax >= (ex - 1) && ax <= (ex + 1) && ay >= (ey - 1) && ay <= (ey + 1))
-    let elfIndex = elves |> Array.findIndex (fun t -> t = elf)
+    //let elvesCache = elves |> Array.filter (fun (ax, ay) -> ax >= (ex - 1) && ax <= (ex + 1) && ay >= (ey - 1) && ay <= (ey + 1))
+    let elvesCache = [| (-1,-1); (-1,0); (-1,1); (0,-1); (0,0); (0,1); (1,-1); (1,0); (1,1) |] |> Array.map (fun (dx, dy) -> indexGet(ex+dx, ey+dy, elvesIndex)) |> Array.filter (fun e -> e.IsSome) |> Array.map (fun e -> fst(e.Value))
     if elvesCache.Length = 1 then [] else
     dirs |> List.map (fun dir ->  generateProposal(elf, elfIndex, elvesCache, dir))
     
+let buildIndex(elves: Elves): ElvesIndex =
+    elves |>
+    Seq.indexed |>
+    Seq.groupBy (fun (i, e) -> (fst e)) |>
+    Seq.map (fun (y, grp) -> (y, grp |>
+        Seq.groupBy (fun (i, e) -> (snd e)) |>
+        Seq.map (fun (y, grp) -> (y, grp |>
+            Seq.map (fun (i, e) -> (e, i)) |>
+            Seq.exactlyOne)) |> Map)) |>
+    Map
+
 let generateProposals(elves: Elves, current: int): Proposals =
     let roundDirections = rotatedDirections(current)
+    let elvesIndex = buildIndex(elves)
     elves |>
-        Seq.map (fun elf -> generateElfProposals(elf, elves, roundDirections) |>
+        Seq.indexed |>
+        Seq.map (fun (i, elf) -> generateElfProposals(elf, i, elvesIndex, roundDirections) |>
             Seq.tryFind (fun p -> p.IsSome)) |>
         Seq.filter (fun p -> p.IsSome) |>
         Seq.map (fun p -> p.Value.Value) |>
