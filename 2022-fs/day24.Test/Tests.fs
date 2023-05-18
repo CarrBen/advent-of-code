@@ -68,8 +68,8 @@ type TestClass () =
         Assert.AreEqual(4, valley.height)
         Assert.AreEqual(19, blizzards.Length)
         
-    // [<TestMethod>]
-    // member this.Part2Example () =
-    //     let input = IO.File.ReadAllText("../../../example.txt")
-    //     let part2 = day24.part2(input)
-    //     Assert.AreEqual(, part2)
+    [<TestMethod>]
+    member this.Part2Example () =
+        let input = IO.File.ReadAllText("../../../example.txt")
+        let part2 = day24.part2(input)
+        Assert.AreEqual(54, part2)

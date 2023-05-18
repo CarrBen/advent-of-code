@@ -1,7 +1,7 @@
 module day24
 
 type Valley = {width:int; height:int}
-type Position = {x:int; y:int}
+type Position = {x:int; y:int; stage:int}
 type Positions = Position array
 type Direction = Up | Right | Down | Left
 type Blizzard = {x:int; y:int; dir:Direction}
@@ -64,22 +64,40 @@ let stepParty(valley: Valley, blizzards: Blizzards) (pos: Position): Positions =
         Array.map (fun (dx, dy) -> (pos.x+dx, pos.y+dy)) |>
         Array.filter (fun (x, y) -> ((x=1 && y=0) || (x = valley.width && y = (valley.height + 1)) || x > 0 && y > 0 && x < (valley.width+1) && y < (valley.height+1))) |>
         Array.filter (fun (x, y) -> (localBlizzards |> Array.tryFind (fun blizz -> blizz.x = x && blizz.y = y)).IsNone) |>
-        Array.map (fun (x, y) -> {x=x; y=y})   
+        Array.map (fun (x, y) -> {x=x; y=y; stage=pos.stage})   
 
-let isFinished(valley: Valley) (pos: Position): bool =
+let isFinishedPart1(valley: Valley) (pos: Position): bool =
     pos.y = (valley.height + 1) && pos.x = valley.width
     
-let rec step(valley: Valley, blizzards: Blizzards, positions: Positions, s: int): int =
+let rec stepPart1(valley: Valley, blizzards: Blizzards, positions: Positions, s: int): int =
     let nextBlizzards = stepBlizzards(valley, blizzards)
     let nextPositions = positions |> Array.map (stepParty (valley, nextBlizzards)) |> Array.concat |> Array.distinct
-    let finishedPositions = nextPositions |> Array.filter (isFinished valley)
+    let finishedPositions = nextPositions |> Array.filter (isFinishedPart1 valley)
     if finishedPositions.Length > 0 then s else
-    step(valley, nextBlizzards, nextPositions, s+1)
+    stepPart1(valley, nextBlizzards, nextPositions, s+1)
+    
+let isFinishedPart2(valley: Valley) (pos: Position): bool =
+    pos.y = (valley.height + 1) && pos.x = valley.width && pos.stage = 2
+    
+let promotePositionPart2(valley: Valley) (pos: Position): Position =
+    if (pos.stage=0 && pos.y = (valley.height + 1) && pos.x = valley.width) || (pos.stage=1 && pos.y = 0 && pos.x = 1) then
+        {pos with stage=pos.stage+1}
+    else
+        pos
+    
+let rec stepPart2(valley: Valley, blizzards: Blizzards, positions: Positions, s: int): int =
+    let nextBlizzards = stepBlizzards(valley, blizzards)
+    let nextPositions = positions |> Array.map (stepParty (valley, nextBlizzards)) |> Array.concat |> Array.map (promotePositionPart2 valley) |> Array.distinct
+    let finishedPositions = nextPositions |> Array.filter (isFinishedPart2 valley)
+    if finishedPositions.Length > 0 then s else
+    stepPart2(valley, nextBlizzards, nextPositions, s+1)
 
 let part1 (input : string) =
     let valley, blizzards = parse(input)
     let x, y = 1, 0
-    step(valley, blizzards, [| {x=x; y=y} |], 1)
+    stepPart1(valley, blizzards, [| {x=x; y=y; stage=0} |], 1)
     
 let part2 (input : string) =
-    0
+    let valley, blizzards = parse(input)
+    let x, y = 1, 0
+    stepPart2(valley, blizzards, [| {x=x; y=y; stage=0} |], 1)
